@@ -1,0 +1,42 @@
+{
+  "name": "@dyb881/fetch-request",
+  "version": "0.2.0",
+  "description": "配置型请求封装，所有参数最终均合成配置对象，并使用 fetch 发出请求",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "typings": "./lib/index.d.ts",
+  "style": "./lib/style.css",
+  "less": "./src/style.less",
+  "scripts": {
+    "build": "tsc && lessc ./src/style.less > ./lib/style.css",
+    "patch": "npm version patch",
+    "minor": "npm version minor",
+    "major": "npm version major",
+    "push": "yarn build && npm publish --access=public"
+  },
+  "author": "dyb881",
+  "license": "ISC",
+  "devDependencies": {
+    "less": "^3.9.0",
+    "typescript": "^3.4.5"
+  },
+  "dependencies": {
+    "@types/qs": "^6.5.3",
+    "@types/react": "^16.8.18",
+    "@types/react-dom": "^16.8.4",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dyb881/fetch-request.git"
+  },
+  "keywords": [
+    "fetch",
+    "request"
+  ],
+  "bugs": {
+    "url": "https://github.com/dyb881/fetch-request/issues"
+  },
+  "homepage": "https://github.com/dyb881/fetch-request#readme"
+}
