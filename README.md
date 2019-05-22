@@ -68,9 +68,14 @@ get('http://localhost/api/test',{ id: 1000 }, {
   }
 });
 
-// 追加覆盖配置
+// 无限追加覆盖配置
 get('http://localhost/api/test',{ id: 1000 }, '测试请求', {
-  label: '新测试请求',
+  label: '新测试请求1',
+});
+get('http://localhost/api/test',{ id: 1000 }, '测试请求', {
+  label: '新测试请求1',
+}, {
+  label: '新测试请求2',
 });
 
 // 除了 get 和 upload 以外的请求方法中的 请求数据 data 会根据 headers['Content-type'] 的类型处理提交数据

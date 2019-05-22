@@ -242,31 +242,18 @@ export default class FetchRequest {
     url: string,
     data?: object,
     config?: IConfig | string,
-    coverConfig?: IConfig
-  ) =>
-    this.request({
-      method,
-      url,
-      data,
-      ...labelToConfig(config),
-      ...coverConfig,
-    });
+    ...args: IConfig[]
+  ) => this.request(Object.assign({ method, url, data }, labelToConfig(config), ...args));
 
   get = this.createRequest('GET');
   post = this.createRequest('POST');
   put = this.createRequest('PUT');
   patch = this.createRequest('PATCH');
   del = this.createRequest('DELETE');
-  upload = (url: string, data: object, config?: IConfig | string, coverConfig?: IConfig) =>
-    this.request({
-      method: 'POST',
-      headers: {},
-      url,
-      data,
-      body: getFormData(data),
-      ...labelToConfig(config),
-      ...coverConfig,
-    });
+  upload = (url: string, data: object, config?: IConfig | string, ...args: IConfig[]) =>
+    this.request(
+      Object.assign({ method: 'POST', headers: {}, url, data, body: getFormData(data) }, labelToConfig(config), ...args)
+    );
 }
 
 export const { get, post, put, patch, del, upload } = new FetchRequest();
