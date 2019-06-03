@@ -58,8 +58,9 @@ const toBody = (config: IConfig) => {
     if (body) config.url += `?${body}`;
   } else {
     const contentType = (config.headers && config.headers['Content-type']) || application.json;
-    const body = applicationToBodyFun[contentType] && applicationToBodyFun[contentType](config.data);
-    if (body && ['{}', '[]'].indexOf(body) === -1) config.body = body;
+    if (applicationToBodyFun[contentType]) {
+      config.body = applicationToBodyFun[contentType](config.data);
+    }
   }
   return config;
 };
