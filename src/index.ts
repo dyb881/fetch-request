@@ -239,21 +239,20 @@ export default class FetchRequest {
       .then(res => this.interceptorsResponse({ time: st(), ...res }, config)); // 载入响应拦截
   };
 
-  createRequest = (method: IConfig['method']) => (
-    url: string,
-    data?: object,
-    config?: IConfig | string,
-    ...args: IConfig[]
-  ) => this.request(Object.assign({ method, url, data }, labelToConfig(config), ...args));
+  createRequest = (method: IConfig['method']) => (url: string, data?: object, ...args: (IConfig | string)[]) =>
+    this.request(Object.assign({ method, url, data }, ...args.map(i => labelToConfig(i))));
 
   get = this.createRequest('GET');
   post = this.createRequest('POST');
   put = this.createRequest('PUT');
   patch = this.createRequest('PATCH');
   del = this.createRequest('DELETE');
-  upload = (url: string, data: object, config?: IConfig | string, ...args: IConfig[]) =>
+  upload = (url: string, data: object, ...args: (IConfig | string)[]) =>
     this.request(
-      Object.assign({ method: 'POST', headers: {}, url, data, body: getFormData(data) }, labelToConfig(config), ...args)
+      Object.assign(
+        { method: 'POST', headers: {}, url, data, body: getFormData(data) },
+        ...args.map(i => labelToConfig(i))
+      )
     );
 }
 
