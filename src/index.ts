@@ -8,6 +8,7 @@ interface IConfig {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 请求类型，部分后端只能识别大写
   cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached'; // 缓存模式
   credentials?: 'omit' | 'same-origin' | 'include'; // 是否应该在来源请求中发送来自其他域的cookie
+  responseType?: 'json' | 'text' | 'text';
   // 请求头
   headers?: {
     Accept?: string; // 期望得到数据格式
@@ -57,8 +58,8 @@ const toBody = (config: IConfig) => {
     const body = qs.stringify(config.data);
     if (body) config.url += `?${body}`;
   } else {
-    const contentType = (config.headers && config.headers['Content-type']) || application.json;
-    if (applicationToBodyFun[contentType]) {
+    const contentType = config.headers && config.headers['Content-type'];
+    if (contentType && applicationToBodyFun[contentType]) {
       config.body = applicationToBodyFun[contentType](config.data);
     }
   }
@@ -172,6 +173,7 @@ export default class FetchRequest {
     method: 'GET',
     cache: 'default',
     credentials: 'omit',
+    responseType: 'json',
     headers: {
       Accept: application.json,
       'Content-type': application.json,
@@ -223,14 +225,10 @@ export default class FetchRequest {
       new Promise((_, reject) => setTimeout(() => reject('request timeout'), config.timeout)),
     ])
       .then(response => {
-        if (!(response instanceof Response)) return response;
-        try {
-          return response.json(); // 默认 json 格式读取数据
-        } catch (e) {
-          return {
-            data: response.text(), // 失败则使用 text 格式读取
-          };
+        if (response instanceof Response) {
+          return response[config.responseType || 'json'](); // 默认 json 格式读取数据
         }
+        return response;
       }) // 转化响应数据
       .catch(error => ({
         error,
