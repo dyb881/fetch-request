@@ -8,7 +8,7 @@ interface IConfig {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 请求类型，部分后端只能识别大写
   cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached'; // 缓存模式
   credentials?: 'omit' | 'same-origin' | 'include'; // 是否应该在来源请求中发送来自其他域的cookie
-  responseType?: 'json' | 'text' | 'text';
+  responseType?: 'json' | 'text' | 'blob'; // 响应数据类型
   // 请求头
   headers?: {
     Accept?: string; // 期望得到数据格式
@@ -226,7 +226,17 @@ export default class FetchRequest {
     ])
       .then(response => {
         if (response instanceof Response) {
-          return response[config.responseType || 'json'](); // 默认 json 格式读取数据
+          switch (config.responseType) {
+            case 'text':
+              return { text: response.text() };
+              break;
+            case 'blob':
+              return { blob: response.blob() };
+              break;
+            default:
+              return response.json();
+              break;
+          }
         }
         return response;
       }) // 转化响应数据

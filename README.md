@@ -23,7 +23,7 @@ export const { baseURL, get, post, put, patch, del, upload } = new FetchReques({
     return config;
   },
   interceptorsResponse: (res, config) => {
-    if (!res.errorText && successCode.indexOf(res.code) === -1) {
+    if (!res.errorText && config.responseType === 'json' && successCode.indexOf(res.code) === -1) {
       res.error = res.code;
       res.errorText = res.msg || '请求异常';
     }
@@ -170,6 +170,7 @@ interface IConfig {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 请求类型，部分后端只能识别大写
   cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached'; // 缓存模式
   credentials?: 'omit' | 'same-origin' | 'include'; // 是否应该在来源请求中发送来自其他域的cookie
+  responseType?: 'json' | 'text' | 'blob'; // 响应数据类型
   // 请求头
   headers?: {
     Accept?: string; // 期望得到数据格式
