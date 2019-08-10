@@ -222,7 +222,7 @@ export default class FetchRequest {
     // 发出请求
     return Promise.race([
       fetch(config.url, config), // 追加请求超时
-      new Promise((_, reject) => setTimeout(() => reject('request timeout'), config.timeout)),
+      new Promise((_, reject) => setTimeout(reject, 1000, 'request timeout')),
     ])
       .then(response => {
         if (response instanceof Response) {
