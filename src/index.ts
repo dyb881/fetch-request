@@ -207,14 +207,11 @@ export default class FetchRequest {
     // 拼接地址
     if (!/^http/.test(url)) url = this.baseURL + url;
 
-    // 转为主体，执行请求拦截
-    config = this.interceptorsRequest(
-      toBody({
-        url,
-        ...this.defaultConfig,
-        ...config,
-      })
-    );
+    // 请求拦截
+    config = this.interceptorsRequest({ url, ...this.defaultConfig, ...config });
+
+    // 转为主体
+    config = toBody(config);
 
     // 开始统计时间
     const st = statisticalTime();
