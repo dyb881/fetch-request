@@ -3,7 +3,7 @@ import qs from 'qs';
 /**
  * 默认请求配置
  */
-interface IConfig {
+export interface IConfig {
   mode?: 'same-origin' | 'no-cors' | 'cors' | 'navigate'; // 请求的模式
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 请求类型，部分后端只能识别大写
   cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached'; // 缓存模式
@@ -26,7 +26,7 @@ interface IConfig {
 /**
  * 初始化配置
  */
-interface IFetchRequestConfig {
+export interface IFetchRequestConfig {
   defaultConfig?: IConfig; // 默认配置
   host?: string; // API地址
   apiPath?: string; // API目录
