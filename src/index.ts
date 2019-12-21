@@ -3,7 +3,7 @@ import qs from 'qs';
 /**
  * 默认请求配置
  */
-export type TConfig {
+export type TConfig = {
   mode?: 'same-origin' | 'no-cors' | 'cors' | 'navigate'; // 请求的模式
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 请求类型，部分后端只能识别大写
   cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached'; // 缓存模式
@@ -21,18 +21,18 @@ export type TConfig {
   data?: any; // 请求元数据，转为主体前的数据
   label?: string; // 请求标签，一般用于请求日志标记
   [key: string]: any;
-}
+};
 
 /**
  * 初始化配置
  */
-export type TFetchRequestConfig {
+export type TFetchRequestConfig = {
   defaultConfig?: TConfig; // 默认配置
   host?: string; // API地址
   apiPath?: string; // API目录
   interceptorsRequest?: (config: TConfig) => TConfig; // 请求拦截，可以返回拦截处理的配置
   interceptorsResponse?: (res: any, config: TConfig) => any; // 响应拦截，可以返回拦截处理的结果
-}
+};
 
 /**
  * 数据类型
