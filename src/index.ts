@@ -3,7 +3,7 @@ import qs from 'qs';
 /**
  * 默认请求配置
  */
-export interface IConfig {
+export type TConfig {
   mode?: 'same-origin' | 'no-cors' | 'cors' | 'navigate'; // 请求的模式
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 请求类型，部分后端只能识别大写
   cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached'; // 缓存模式
@@ -26,12 +26,12 @@ export interface IConfig {
 /**
  * 初始化配置
  */
-export interface IFetchRequestConfig {
-  defaultConfig?: IConfig; // 默认配置
+export type TFetchRequestConfig {
+  defaultConfig?: TConfig; // 默认配置
   host?: string; // API地址
   apiPath?: string; // API目录
-  interceptorsRequest?: (config: IConfig) => IConfig; // 请求拦截，可以返回拦截处理的配置
-  interceptorsResponse?: (res: any, config: IConfig) => any; // 响应拦截，可以返回拦截处理的结果
+  interceptorsRequest?: (config: TConfig) => TConfig; // 请求拦截，可以返回拦截处理的配置
+  interceptorsResponse?: (res: any, config: TConfig) => any; // 响应拦截，可以返回拦截处理的结果
 }
 
 /**
@@ -53,7 +53,7 @@ const applicationToBodyFun = {
 /**
  * data 转为请求主体
  */
-const toBody = (config: IConfig) => {
+const toBody = (config: TConfig) => {
   if (config.method === 'GET') {
     const body = qs.stringify(config.data);
     if (body) config.url += `?${body}`;
@@ -69,7 +69,7 @@ const toBody = (config: IConfig) => {
 /**
  * 如果配置为文本类型，直接写入 label
  */
-const labelToConfig = (config?: IConfig | string) => (typeof config === 'string' ? { label: config } : config);
+const labelToConfig = (config?: TConfig | string) => (typeof config === 'string' ? { label: config } : config);
 
 /**
  * 对象数据写入表单对象
@@ -141,7 +141,7 @@ const consoleStyle = {
  * 请求配置的 请求标签 label 代表打印日志的 文本内容
  */
 export const log = {
-  request: (config: IConfig) => {
+  request: (config: TConfig) => {
     console.groupCollapsed(`%cRequest: ${config.label || config.url} ⇅`, consoleStyle.request);
     console.log('请求类型：', config.method);
     console.log('请求地址：', config.url);
@@ -149,7 +149,7 @@ export const log = {
     console.log('请求配置：', config);
     console.groupEnd();
   },
-  response: (res: any, config: IConfig, success: boolean) => {
+  response: (res: any, config: TConfig, success: boolean) => {
     let title = `%cResponse: ${config.label || config.url} ${success ? '√' : '×'}`;
     if (res.time && res.time.total) title += ` 用时：${res.time.total}`;
     console.groupCollapsed(title, consoleStyle[success ? 'success' : 'fail']);
@@ -168,7 +168,7 @@ export const log = {
 export default class FetchRequest {
   host = '';
   apiPath = '';
-  defaultConfig: IConfig = {
+  defaultConfig: TConfig = {
     mode: 'cors',
     method: 'GET',
     cache: 'default',
@@ -180,10 +180,10 @@ export default class FetchRequest {
     },
     timeout: 3000,
   };
-  interceptorsRequest = (config: IConfig) => config;
-  interceptorsResponse = (res: any, _config: IConfig) => res;
+  interceptorsRequest = (config: TConfig) => config;
+  interceptorsResponse = (res: any, _config: TConfig) => res;
 
-  constructor(config?: IFetchRequestConfig) {
+  constructor(config?: TFetchRequestConfig) {
     if (config) {
       const { defaultConfig, ...configs } = config;
       Object.assign(this.defaultConfig, defaultConfig);
@@ -201,7 +201,7 @@ export default class FetchRequest {
   /**
    * 执行请求
    */
-  request = (configs: IConfig) => {
+  request = (configs: TConfig) => {
     let { url = '', ...config } = configs;
 
     // 拼接地址
@@ -244,7 +244,7 @@ export default class FetchRequest {
       .then(res => this.interceptorsResponse({ time: st(), ...res }, config)); // 载入响应拦截
   };
 
-  createRequest = (method: IConfig['method']) => (url: string, data?: object, ...args: (IConfig | string)[]) =>
+  createRequest = (method: TConfig['method']) => (url: string, data?: object, ...args: (TConfig | string)[]) =>
     this.request(Object.assign({ method, url, data }, ...args.map(i => labelToConfig(i))));
 
   get = this.createRequest('GET');
@@ -252,7 +252,7 @@ export default class FetchRequest {
   put = this.createRequest('PUT');
   patch = this.createRequest('PATCH');
   del = this.createRequest('DELETE');
-  upload = (url: string, data: object, ...args: (IConfig | string)[]) =>
+  upload = (url: string, data: object, ...args: (TConfig | string)[]) =>
     this.request(
       Object.assign(
         { method: 'POST', headers: {}, url, data, body: getFormData(data) },
