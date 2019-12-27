@@ -178,7 +178,7 @@ export default class FetchRequest {
       Accept: application.json,
       'Content-type': application.json,
     },
-    timeout: 3000,
+    timeout: 5000,
   };
   interceptorsRequest = (config: TConfig) => config;
   interceptorsResponse = (res: any, _config: TConfig) => res;
