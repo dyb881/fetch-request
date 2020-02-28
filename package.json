@@ -17,15 +17,15 @@
   "author": "dyb881",
   "license": "ISC",
   "devDependencies": {
-    "less": "^3.9.0",
-    "typescript": "^3.4.5"
+    "less": "^3.11.1",
+    "typescript": "^3.8.2"
   },
   "dependencies": {
-    "@types/qs": "^6.5.3",
-    "@types/react": "^16.8.18",
-    "@types/react-dom": "^16.8.4",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6"
+    "@types/qs": "^6.9.1",
+    "@types/react": "^16.9.23",
+    "@types/react-dom": "^16.9.5",
+    "react": "^16.13.0",
+    "react-dom": "^16.13.0"
   },
   "repository": {
     "type": "git",

@@ -8,7 +8,7 @@ export type TConfig = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 请求类型，部分后端只能识别大写
   cache?: 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached'; // 缓存模式
   credentials?: 'omit' | 'same-origin' | 'include'; // 是否应该在来源请求中发送来自其他域的cookie
-  responseType?: 'json' | 'text' | 'blob'; // 响应数据类型
+  responseType?: 'arrayBuffer' | 'blob' | 'formData' | 'json' | 'text'; // 响应数据类型
   // 请求头
   headers?: {
     Accept?: string; // 期望得到数据格式
@@ -20,6 +20,7 @@ export type TConfig = {
   url?: string; // 请求地址
   data?: any; // 请求元数据，转为主体前的数据
   label?: string; // 请求标签，一般用于请求日志标记
+  interceptorsFetchResponse?: (fetchResponse: Promise<Response>) => Promise<Response>; // 拦截 fetch 请求
   [key: string]: any;
 };
 
@@ -55,13 +56,13 @@ const applicationToBodyFun = {
  */
 const toBody = (config: TConfig) => {
   if (config.method === 'GET') {
-    const body = qs.stringify(config.data);
-    if (body) config.url += `?${body}`;
+    // 把参数转化后拼接到 url
+    const params = qs.stringify(config.data);
+    if (params) config.url += `?${params}`;
   } else {
-    const contentType = config.headers && config.headers['Content-type'];
-    if (contentType && applicationToBodyFun[contentType]) {
-      config.body = applicationToBodyFun[contentType](config.data);
-    }
+    // 根据请求类型处理转化 data 为 body
+    const contentType = config.headers?.['Content-type'];
+    if (contentType) config.body = applicationToBodyFun[contentType]?.(config.data);
   }
   return config;
 };
@@ -69,25 +70,25 @@ const toBody = (config: TConfig) => {
 /**
  * 如果配置为文本类型，直接写入 label
  */
-const labelToConfig = (config?: TConfig | string) => (typeof config === 'string' ? { label: config } : config);
+const labelToConfig = (config?: TConfig | string) => {
+  return typeof config === 'string' ? { label: config } : config;
+};
 
 /**
  * 对象数据写入表单对象
  * 主要用于上传文件
  */
-const getFormData = (data: object) => {
-  const body = new FormData();
-  const setData = (data: object, key = '') => {
-    Object.keys(data).forEach(i => {
-      const item = data[i];
-      if (item && typeof item === 'object' && !(item instanceof File)) {
-        setData(item, key ? `${key}[${i}]` : i);
-      } else {
-        body.append(key ? `${key}[${i}]` : i, item);
-      }
-    });
-  };
-  setData(data);
+const getFormData = (data: object, key = '', body = new FormData()) => {
+  for (const [i, item] of Object.entries(data)) {
+    const k = key ? `${key}[${i}]` : i;
+    if (typeof item === 'object' && !(item instanceof File)) {
+      // 把对象拆分写入
+      getFormData(item, k, body);
+    } else {
+      // 写入值
+      body.append(k, item);
+    }
+  }
   return body;
 };
 
@@ -98,11 +99,7 @@ const statisticalTime = () => {
   const start = new Date();
   return () => {
     const end = new Date();
-    return {
-      start: start.toTimeString(),
-      end: end.toTimeString(),
-      total: `${(+end - +start) / 1000}秒`,
-    };
+    return { start: start.toTimeString(), end: end.toTimeString(), total: `${(+end - +start) / 1000}秒` };
   };
 };
 
@@ -120,9 +117,8 @@ const erroText = {
  */
 const erroToText = (error: string): string => {
   for (const reg in erroText) {
-    if (new RegExp(reg).test(error)) {
-      return erroText[reg];
-    }
+    // 正则匹配得到错误文本
+    if (new RegExp(reg).test(error)) return erroText[reg];
   }
   return '其他错误';
 };
@@ -151,7 +147,7 @@ export const log = {
   },
   response: (res: any, config: TConfig, success: boolean) => {
     let title = `%cResponse: ${config.label || config.url} ${success ? '√' : '×'}`;
-    if (res.time && res.time.total) title += ` 用时：${res.time.total}`;
+    if (res?.time?.total) title += ` 用时：${res.time.total}`;
     console.groupCollapsed(title, consoleStyle[success ? 'success' : 'fail']);
     console.log('响应数据：', res);
     if (!success) {
@@ -202,7 +198,7 @@ export default class FetchRequest {
    * 执行请求
    */
   request = (configs: TConfig) => {
-    let { url = '', ...config } = configs;
+    let { url = '', interceptorsFetchResponse, ...config } = configs;
 
     // 拼接地址
     if (!/^http/.test(url)) url = this.baseURL + url;
@@ -216,49 +212,51 @@ export default class FetchRequest {
     // 开始统计时间
     const st = statisticalTime();
 
+    // 请求控制器
+    const controller = new AbortController();
+    config.signal = controller.signal;
+
     // 发出请求
-    return Promise.race([
-      fetch(config.url, config), // 追加请求超时
-      new Promise((_, reject) => setTimeout(reject, config.timeout, 'request timeout')),
-    ])
+    let fetchResponse = fetch(config.url, config);
+
+    // 拦截 fetch 请求
+    if (interceptorsFetchResponse) fetchResponse = interceptorsFetchResponse(fetchResponse);
+
+    // 请求超时
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => {
+        controller.abort(); // 终止请求
+        reject('request timeout');
+      }, config.timeout)
+    );
+
+    // 处理结果
+    return Promise.race([fetchResponse, timeout])
       .then(response => {
-        if (response instanceof Response) {
-          switch (config.responseType) {
-            case 'text':
-              return { text: response.text() };
-              break;
-            case 'blob':
-              return { blob: response.blob() };
-              break;
-            default:
-              return response.json();
-              break;
-          }
-        }
-        return response;
+        if (!(response instanceof Response)) return;
+        const { responseType } = config;
+        // 响应类型为空或等于 json 时，直接返回 json 对象
+        return responseType && responseType !== 'json' ? { [responseType]: response[responseType]() } : response.json();
       }) // 转化响应数据
-      .catch(error => ({
-        error,
-        errorText: erroToText(error),
-      }))
+      .catch(error => ({ error, errorText: erroToText(error) })) // 异常分析
       .then(res => this.interceptorsResponse({ time: st(), ...res }, config)); // 载入响应拦截
   };
 
-  createRequest = (method: TConfig['method']) => (url: string, data?: object, ...args: (TConfig | string)[]) =>
-    this.request(Object.assign({ method, url, data }, ...args.map(i => labelToConfig(i))));
+  /**
+   * 创建请求器
+   */
+  createRequest = (method: TConfig['method'], configs?: TConfig) => {
+    return (url: string, data?: object, ...args: (TConfig | string)[]) => {
+      return this.request(Object.assign({ method, url, data }, configs, ...args.map(i => labelToConfig(i))));
+    };
+  };
 
   get = this.createRequest('GET');
   post = this.createRequest('POST');
   put = this.createRequest('PUT');
   patch = this.createRequest('PATCH');
   del = this.createRequest('DELETE');
-  upload = (url: string, data: object, ...args: (TConfig | string)[]) =>
-    this.request(
-      Object.assign(
-        { method: 'POST', headers: {}, url, data, body: getFormData(data) },
-        ...args.map(i => labelToConfig(i))
-      )
-    );
+  upload = this.createRequest('POST', { headers: {}, body: getFormData(data) });
 }
 
 export const { get, post, put, patch, del, upload } = new FetchRequest();
