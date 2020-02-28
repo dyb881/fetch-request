@@ -44,6 +44,24 @@ export const application = {
 };
 
 /**
+ * 对象数据写入表单对象
+ * 主要用于上传文件
+ */
+const getFormData = (data: object, key = '', body = new FormData()) => {
+  for (const [i, item] of Object.entries(data)) {
+    const k = key ? `${key}[${i}]` : i;
+    if (typeof item === 'object' && !(item instanceof File)) {
+      // 把对象拆分写入
+      getFormData(item, k, body);
+    } else {
+      // 写入值
+      body.append(k, item);
+    }
+  }
+  return body;
+};
+
+/**
  * 根据数据类型生成方法
  */
 const applicationToBodyFun = {
@@ -62,7 +80,8 @@ const toBody = (config: TConfig) => {
   } else {
     // 根据请求类型处理转化 data 为 body
     const contentType = config.headers?.['Content-type'];
-    if (contentType) config.body = applicationToBodyFun[contentType]?.(config.data);
+    const toBodyFun = contentType ? applicationToBodyFun[contentType] : getFormData;
+    config.body = toBodyFun(config.data);
   }
   return config;
 };
@@ -72,24 +91,6 @@ const toBody = (config: TConfig) => {
  */
 const labelToConfig = (config?: TConfig | string) => {
   return typeof config === 'string' ? { label: config } : config;
-};
-
-/**
- * 对象数据写入表单对象
- * 主要用于上传文件
- */
-const getFormData = (data: object, key = '', body = new FormData()) => {
-  for (const [i, item] of Object.entries(data)) {
-    const k = key ? `${key}[${i}]` : i;
-    if (typeof item === 'object' && !(item instanceof File)) {
-      // 把对象拆分写入
-      getFormData(item, k, body);
-    } else {
-      // 写入值
-      body.append(k, item);
-    }
-  }
-  return body;
 };
 
 /**
@@ -116,9 +117,9 @@ const erroText = {
  * 异常分析 错误信息 => 错误解析文本
  */
 const erroToText = (error: string): string => {
-  for (const reg in erroText) {
+  for (const [key, item] of Object.entries(erroText)) {
     // 正则匹配得到错误文本
-    if (new RegExp(reg).test(error)) return erroText[reg];
+    if (new RegExp(key).test(error)) return item;
   }
   return '其他错误';
 };
@@ -235,7 +236,7 @@ export default class FetchRequest {
       .then(response => {
         if (!(response instanceof Response)) return;
         const { responseType } = config;
-        // 响应类型为空或等于 json 时，直接返回 json 对象
+        // 响应类型为空时使用 json 解析
         return responseType && responseType !== 'json' ? { [responseType]: response[responseType]() } : response.json();
       }) // 转化响应数据
       .catch(error => ({ error, errorText: erroToText(error) })) // 异常分析
@@ -256,7 +257,7 @@ export default class FetchRequest {
   put = this.createRequest('PUT');
   patch = this.createRequest('PATCH');
   del = this.createRequest('DELETE');
-  upload = this.createRequest('POST', { headers: {}, body: getFormData(data) });
+  upload = this.createRequest('POST', { headers: {} });
 }
 
 export const { get, post, put, patch, del, upload } = new FetchRequest();
