@@ -12,7 +12,7 @@ export type TConfig = {
   // 请求头
   headers?: {
     Accept?: string; // 期望得到数据格式
-    'Content-type'?: string; // 传递参数格式
+    'Content-Type'?: string; // 传递参数格式
     [key: string]: any;
   };
   timeout?: number; // 请求超时
@@ -79,7 +79,9 @@ const toBody = (config: TConfig) => {
     if (params) config.url += `?${params}`;
   } else {
     // 根据请求类型处理转化 data 为 body
-    const contentType = config.headers?.['Content-type'];
+    const contentType = ['Content-Type', 'Content-type', 'content-Type', 'content-type'].reduce((c, i) => {
+      return config.headers?.[i] || c;
+    }, '');
     const toBodyFun = contentType ? applicationToBodyFun[contentType] : getFormData;
     config.body = toBodyFun(config.data);
   }
@@ -173,7 +175,7 @@ export default class FetchRequest {
     responseType: 'json',
     headers: {
       Accept: application.json,
-      'Content-type': application.json,
+      'Content-Type': application.json,
     },
     timeout: 5000,
   };
