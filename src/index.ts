@@ -47,7 +47,8 @@ export const application = {
  * 对象数据写入表单对象
  * 主要用于上传文件
  */
-const getFormData = (data: object, key = '', body = new FormData()) => {
+const getFormData = (data: object | FormData, key = '', body = new FormData()) => {
+  if (data instanceof FormData) return data;
   for (const [i, item] of Object.entries(data)) {
     const k = key ? `${key}[${i}]` : i;
     if (typeof item === 'object' && !(item instanceof File)) {
@@ -235,14 +236,14 @@ export default class FetchRequest {
 
     // 处理结果
     return Promise.race([fetchResponse, timeout])
-      .then(response => {
+      .then((response) => {
         if (!(response instanceof Response)) return;
         const { responseType } = config;
         // 响应类型为空时使用 json 解析
         return responseType && responseType !== 'json' ? { [responseType]: response[responseType]() } : response.json();
       }) // 转化响应数据
-      .catch(error => ({ error, errorText: erroToText(error) })) // 异常分析
-      .then(res => this.interceptorsResponse({ time: st(), ...res }, config)); // 载入响应拦截
+      .catch((error) => ({ error, errorText: erroToText(error) })) // 异常分析
+      .then((res) => this.interceptorsResponse({ time: st(), ...res }, config)); // 载入响应拦截
   };
 
   /**
@@ -250,7 +251,7 @@ export default class FetchRequest {
    */
   createRequest = (method: TConfig['method'], configs?: TConfig) => {
     return (url: string, data?: object, ...args: (TConfig | string)[]) => {
-      return this.request(Object.assign({ method, url, data }, configs, ...args.map(i => labelToConfig(i))));
+      return this.request(Object.assign({ method, url, data }, configs, ...args.map((i) => labelToConfig(i))));
     };
   };
 
