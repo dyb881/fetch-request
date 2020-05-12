@@ -81,7 +81,7 @@ const toBody = (config: TConfig) => {
   } else {
     // 根据请求类型处理转化 data 为 body
     const contentType = ['Content-Type', 'Content-type', 'content-Type', 'content-type'].reduce((c, i) => {
-      return config.headers?.[i] || c;
+      return (config.headers && config.headers[i]) || c;
     }, '');
     const toBodyFun = contentType ? applicationToBodyFun[contentType] : getFormData;
     config.body = toBodyFun(config.data);
@@ -151,7 +151,7 @@ export const log = {
   },
   response: (res: any, config: TConfig, success: boolean) => {
     let title = `%cResponse: ${config.label || config.url} ${success ? '√' : '×'}`;
-    if (res?.time?.total) title += ` 用时：${res.time.total}`;
+    if (res.time && res.time.total) title += ` 用时：${res.time.total}`;
     console.groupCollapsed(title, consoleStyle[success ? 'success' : 'fail']);
     console.log('响应数据：', res);
     if (!success) {
