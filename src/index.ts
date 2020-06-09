@@ -225,8 +225,9 @@ export default class FetchRequest {
 
   constructor(config?: TFetchRequestConfig) {
     if (config) {
-      const { defaultConfig, ...configs } = config;
+      const { defaultConfig, requestFunction, ...configs } = config;
       Object.assign(this.defaultConfig, defaultConfig);
+      if (requestFunction) this.requestFunction = requestFunction;
       Object.assign(this, configs);
     }
   }
