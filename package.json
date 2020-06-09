@@ -1,6 +1,6 @@
 {
   "name": "@dyb881/fetch-request",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "配置型请求封装，所有参数最终均合成配置对象，并使用 fetch 发出请求",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
