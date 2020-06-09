@@ -20,7 +20,6 @@ export type TConfig = {
   url?: string; // 请求地址
   data?: any; // 请求元数据，转为主体前的数据
   label?: string; // 请求标签，一般用于请求日志标记
-  interceptorsFetchResponse?: (fetchResponse: Promise<Response>) => Promise<Response>; // 拦截 fetch 请求
   [key: string]: any;
 };
 
@@ -33,6 +32,7 @@ export type TFetchRequestConfig = {
   apiPath?: string; // API目录
   interceptorsRequest?: (config: TConfig) => TConfig; // 请求拦截，可以返回拦截处理的配置
   interceptorsResponse?: (res: any, config: TConfig) => any; // 响应拦截，可以返回拦截处理的结果
+  requestFunction?: (config: TConfig) => Promise<any>; // 重写请求方法
 };
 
 /**
@@ -114,6 +114,7 @@ const erroText = {
   timeout: '网络连接超时',
   'Network Error': '请求地址错误或跨域未允许',
   'Failed to fetch': '请求地址错误或跨域未允许',
+  'request:fail': '请求地址错误或跨域未允许',
 };
 
 /**
@@ -168,6 +169,10 @@ export const log = {
 export default class FetchRequest {
   host = '';
   apiPath = '';
+
+  /**
+   * 默认请求配置
+   */
   defaultConfig: TConfig = {
     mode: 'cors',
     method: 'GET',
@@ -180,8 +185,43 @@ export default class FetchRequest {
     },
     timeout: 5000,
   };
+
+  /**
+   * 请求拦截
+   */
   interceptorsRequest = (config: TConfig) => config;
+
+  /**
+   * 响应拦截
+   */
   interceptorsResponse = (res: any, _config: TConfig) => res;
+
+  /**
+   * 请求方法
+   */
+  requestFunction = (config: TConfig) => {
+    // 转为主体
+    config = toBody(config);
+
+    // 请求控制器
+    const controller = new AbortController();
+    config.signal = controller.signal;
+
+    // 请求超时
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => {
+        controller.abort(); // 终止请求
+        reject('request timeout');
+      }, config.timeout)
+    );
+
+    return Promise.race([fetch(config.url!, config), timeout]).then((response) => {
+      if (!(response instanceof Response)) return;
+      const { responseType } = config;
+      // 响应类型为空时使用 json 解析
+      return responseType && responseType !== 'json' ? { [responseType]: response[responseType]() } : response.json();
+    });
+  };
 
   constructor(config?: TFetchRequestConfig) {
     if (config) {
@@ -202,7 +242,7 @@ export default class FetchRequest {
    * 执行请求
    */
   request = (configs: TConfig) => {
-    let { url = '', interceptorsFetchResponse, ...config } = configs;
+    let { url = '', ...config } = configs;
 
     // 拼接地址
     if (!/^http/.test(url)) url = this.baseURL + url;
@@ -210,38 +250,11 @@ export default class FetchRequest {
     // 请求拦截
     config = this.interceptorsRequest({ url, ...this.defaultConfig, ...config });
 
-    // 转为主体
-    config = toBody(config);
-
     // 开始统计时间
     const st = statisticalTime();
 
-    // 请求控制器
-    const controller = new AbortController();
-    config.signal = controller.signal;
-
-    // 发出请求
-    let fetchResponse = fetch(config.url, config);
-
-    // 拦截 fetch 请求
-    if (interceptorsFetchResponse) fetchResponse = interceptorsFetchResponse(fetchResponse);
-
-    // 请求超时
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => {
-        controller.abort(); // 终止请求
-        reject('request timeout');
-      }, config.timeout)
-    );
-
     // 处理结果
-    return Promise.race([fetchResponse, timeout])
-      .then((response) => {
-        if (!(response instanceof Response)) return;
-        const { responseType } = config;
-        // 响应类型为空时使用 json 解析
-        return responseType && responseType !== 'json' ? { [responseType]: response[responseType]() } : response.json();
-      }) // 转化响应数据
+    return this.requestFunction(config) // 转化响应数据
       .catch((error) => ({ error, errorText: erroToText(error) })) // 异常分析
       .then((res) => this.interceptorsResponse({ time: st(), ...res }, config)); // 载入响应拦截
   };
@@ -262,5 +275,3 @@ export default class FetchRequest {
   del = this.createRequest('DELETE');
   upload = this.createRequest('POST', { headers: {} });
 }
-
-export const { get, post, put, patch, del, upload } = new FetchRequest();

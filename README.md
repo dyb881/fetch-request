@@ -102,11 +102,15 @@ const { baseURL, get, post, put, patch, del, upload } = new FetchRequest({
   interceptorsRequest: (config: IConfig) => {
     // 拦截处理请求配置
     return config;
-  }
+  },
   // 响应拦截
   interceptorsResponse: (res: any, config: IConfig) => {
     // 拦截处理响应数据
     return res;
+  },
+  // 重写请求方法，比如小程序的请求器，axios
+  requestFunction: (config: IConfig) => {
+    return Promise<any>
   }
 });
 
