@@ -112,8 +112,8 @@ const statisticalTime = () => {
  */
 const erroText = {
   timeout: '网络连接超时',
-  'Network Error': '请求地址错误或跨域未允许',
-  'Failed to fetch': '请求地址错误或跨域未允许',
+  'Network Error': '请求地址错误',
+  'Failed to fetch': '请求地址错误',
   'request:fail': '请求地址错误',
 };
 
