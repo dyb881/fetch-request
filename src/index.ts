@@ -110,8 +110,9 @@ const statisticalTime = () => {
 /**
  * 错误解析字段
  */
-const erroText = {
+const errorTexts = {
   timeout: '网络连接超时',
+  'The user aborted a request': '网络连接超时',
   'Network Error': '请求地址错误',
   'Failed to fetch': '请求地址错误',
   'request:fail': '请求地址错误',
@@ -121,9 +122,10 @@ const erroText = {
  * 异常分析 错误信息 => 错误解析文本
  */
 const erroToText = (error: string): string => {
-  for (const [key, item] of Object.entries(erroText)) {
+  const errorText = typeof error === 'object' ? error.message : error;
+  for (const [key, item] of Object.entries(errorTexts)) {
     // 正则匹配得到错误文本
-    if (new RegExp(key).test(error)) return item;
+    if (new RegExp(key).test(errorText)) return item;
   }
   return '其他错误';
 };
