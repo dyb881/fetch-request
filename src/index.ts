@@ -121,8 +121,8 @@ const errorTexts = {
 /**
  * 异常分析 错误信息 => 错误解析文本
  */
-const erroToText = (error: string): string => {
-  const errorText = typeof error === 'object' ? error.message : error;
+const erroToText = (error: any): string => {
+  const errorText = (typeof error === 'object' && error.message) || error;
   for (const [key, item] of Object.entries(errorTexts)) {
     // 正则匹配得到错误文本
     if (new RegExp(key).test(errorText)) return item;
