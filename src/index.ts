@@ -51,7 +51,7 @@ const getFormData = (data: object | FormData, key = '', body = new FormData()) =
   if (data instanceof FormData) return data;
   for (const [i, item] of Object.entries(data)) {
     const k = key ? `${key}[${i}]` : i;
-    if (typeof item === 'object' && !(item instanceof File)) {
+    if (typeof item === 'object' && !(item instanceof File || item instanceof Blob)) {
       // 把对象拆分写入
       getFormData(item, k, body);
     } else {
