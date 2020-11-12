@@ -1,3 +1,5 @@
+# ！！已经停止更新，并迁移到 [Supplement](https://dyb881.github.io/supplement/request)
+
 # fetch-request
 
 配置型请求封装，所有参数最终均合成配置对象，并使用 fetch 发出请求
